@@ -17,6 +17,7 @@
 #include <vector>
 // [CLI11:public_includes:end]
 
+#include "Encoding.hpp"
 #include "StringTools.hpp"
 
 namespace CLI {
@@ -42,7 +43,9 @@ constexpr enabler dummy = {};
 template <bool B, class T = void> using enable_if_t = typename std::enable_if<B, T>::type;
 
 /// A copy of std::void_t from C++17 (helper for C++11 and C++14)
-template <typename... Ts> struct make_void { using type = void; };
+template <typename... Ts> struct make_void {
+    using type = void;
+};
 
 /// A copy of std::void_t from C++17 - same reasoning as enable_if_t, it does not hurt to redefine
 template <typename... Ts> using void_t = typename make_void<Ts...>::type;
@@ -71,10 +74,14 @@ template <typename T> struct is_copyable_ptr {
 };
 
 /// This can be specialized to override the type deduction for IsMember.
-template <typename T> struct IsMemberType { using type = T; };
+template <typename T> struct IsMemberType {
+    using type = T;
+};
 
 /// The main custom type needed here is const char * should be a string.
-template <> struct IsMemberType<const char *> { using type = std::string; };
+template <> struct IsMemberType<const char *> {
+    using type = std::string;
+};
 
 namespace detail {
 
@@ -84,7 +91,9 @@ namespace detail {
 /// pointer_traits<T> be valid.
 
 /// not a pointer
-template <typename T, typename Enable = void> struct element_type { using type = T; };
+template <typename T, typename Enable = void> struct element_type {
+    using type = T;
+};
 
 template <typename T> struct element_type<T, typename std::enable_if<is_copyable_ptr<T>::value>::type> {
     using type = typename std::pointer_traits<T>::element_type;
@@ -92,7 +101,9 @@ template <typename T> struct element_type<T, typename std::enable_if<is_copyable
 
 /// Combination of the element type and value type - remove pointer (including smart pointers) and get the value_type of
 /// the container
-template <typename T> struct element_value_type { using type = typename element_type<T>::type::value_type; };
+template <typename T> struct element_value_type {
+    using type = typename element_type<T>::type::value_type;
+};
 
 /// Adaptor for set-like structure: This just wraps a normal container in a few utilities that do almost nothing.
 template <typename T, typename _ = void> struct pair_adaptor : std::false_type {
@@ -231,8 +242,10 @@ struct is_mutable_container<
                          decltype(std::declval<T>().clear()),
                          decltype(std::declval<T>().insert(std::declval<decltype(std::declval<T>().end())>(),
                                                            std::declval<const typename T::value_type &>()))>,
-                  void>>
-    : public conditional_t<std::is_constructible<T, std::string>::value, std::false_type, std::true_type> {};
+                  void>> : public conditional_t<std::is_constructible<T, std::string>::value ||
+                                                    std::is_constructible<T, std::wstring>::value,
+                                                std::false_type,
+                                                std::true_type> {};
 
 // check to see if an object is a mutable container (fail by default)
 template <typename T, typename _ = void> struct is_readable_container : std::false_type {};
@@ -353,7 +366,9 @@ auto value_string(const T &value) -> decltype(to_string(value)) {
 }
 
 /// template to get the underlying value type if it exists or use a default
-template <typename T, typename def, typename Enable = void> struct wrapped_type { using type = def; };
+template <typename T, typename def, typename Enable = void> struct wrapped_type {
+    using type = def;
+};
 
 /// Type size for regular object types that do not look like a tuple
 template <typename T, typename def> struct wrapped_type<T, def, typename std::enable_if<is_wrapper<T>::value>::type> {
@@ -361,7 +376,9 @@ template <typename T, typename def> struct wrapped_type<T, def, typename std::en
 };
 
 /// This will only trigger for actual void type
-template <typename T, typename Enable = void> struct type_count_base { static const int value{0}; };
+template <typename T, typename Enable = void> struct type_count_base {
+    static const int value{0};
+};
 
 /// Type size for regular object types that do not look like a tuple
 template <typename T>
@@ -391,7 +408,9 @@ template <typename T> struct subtype_count;
 template <typename T> struct subtype_count_min;
 
 /// This will only trigger for actual void type
-template <typename T, typename Enable = void> struct type_count { static const int value{0}; };
+template <typename T, typename Enable = void> struct type_count {
+    static const int value{0};
+};
 
 /// Type size for regular object types that do not look like a tuple
 template <typename T>
@@ -442,7 +461,9 @@ template <typename T> struct subtype_count {
 };
 
 /// This will only trigger for actual void type
-template <typename T, typename Enable = void> struct type_count_min { static const int value{0}; };
+template <typename T, typename Enable = void> struct type_count_min {
+    static const int value{0};
+};
 
 /// Type size for regular object types that do not look like a tuple
 template <typename T>
@@ -491,7 +512,9 @@ template <typename T> struct subtype_count_min {
 };
 
 /// This will only trigger for actual void type
-template <typename T, typename Enable = void> struct expected_count { static const int value{0}; };
+template <typename T, typename Enable = void> struct expected_count {
+    static const int value{0};
+};
 
 /// For most types the number of expected items is 1
 template <typename T>
@@ -525,6 +548,10 @@ enum class object_category : int {
     // string like types
     string_assignable = 23,
     string_constructible = 24,
+#ifdef _WIN32
+    wstring_assignable = 25,
+    wstring_constructible = 26,
+#endif  // _WIN32
     other = 45,
     // special wrapper or container types
     wrapper_value = 50,
@@ -592,6 +619,25 @@ struct classify_object<
     static constexpr object_category value{object_category::string_constructible};
 };
 
+#ifdef _WIN32
+/// Wide strings
+template <typename T>
+struct classify_object<T,
+                       typename std::enable_if<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
+                                               std::is_assignable<T &, std::wstring>::value>::type> {
+    static constexpr object_category value{object_category::wstring_assignable};
+};
+
+template <typename T>
+struct classify_object<
+    T,
+    typename std::enable_if<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
+                            !std::is_assignable<T &, std::wstring>::value && (type_count<T>::value == 1) &&
+                            std::is_constructible<T, std::wstring>::value>::type> {
+    static constexpr object_category value{object_category::wstring_constructible};
+};
+#endif  // _WIN32
+
 /// Enumerations
 template <typename T> struct classify_object<T, typename std::enable_if<std::is_enum<T>::value>::type> {
     static constexpr object_category value{object_category::enumeration};
@@ -604,12 +650,13 @@ template <typename T> struct classify_object<T, typename std::enable_if<is_compl
 /// Handy helper to contain a bunch of checks that rule out many common types (integers, string like, floating point,
 /// vectors, and enumerations
 template <typename T> struct uncommon_type {
-    using type = typename std::conditional<!std::is_floating_point<T>::value && !std::is_integral<T>::value &&
-                                               !std::is_assignable<T &, std::string>::value &&
-                                               !std::is_constructible<T, std::string>::value && !is_complex<T>::value &&
-                                               !is_mutable_container<T>::value && !std::is_enum<T>::value,
-                                           std::true_type,
-                                           std::false_type>::type;
+    using type = typename std::conditional<
+        !std::is_floating_point<T>::value && !std::is_integral<T>::value &&
+            !std::is_assignable<T &, std::string>::value && !std::is_constructible<T, std::string>::value &&
+            !std::is_assignable<T &, std::wstring>::value && !std::is_constructible<T, std::wstring>::value &&
+            !is_complex<T>::value && !is_mutable_container<T>::value && !std::is_enum<T>::value,
+        std::true_type,
+        std::false_type>::type;
     static constexpr bool value = type::value;
 };
 
@@ -976,6 +1023,25 @@ bool lexical_cast(const std::string &input, T &output) {
     return true;
 }
 
+#ifdef _WIN32
+/// Wide strings
+template <
+    typename T,
+    enable_if_t<classify_object<T>::value == object_category::wstring_assignable, detail::enabler> = detail::dummy>
+bool lexical_cast(const std::string &input, T &output) {
+    output = widen(input);
+    return true;
+}
+
+template <
+    typename T,
+    enable_if_t<classify_object<T>::value == object_category::wstring_constructible, detail::enabler> = detail::dummy>
+bool lexical_cast(const std::string &input, T &output) {
+    output = T{widen(input)};
+    return true;
+}
+#endif  // _WIN32
+
 /// Enumerations
 template <typename T,
           enable_if_t<classify_object<T>::value == object_category::enumeration, detail::enabler> = detail::dummy>
@@ -1104,7 +1170,13 @@ template <typename AssignTo,
           typename ConvertTo,
           enable_if_t<std::is_same<AssignTo, ConvertTo>::value &&
                           (classify_object<AssignTo>::value == object_category::string_assignable ||
-                           classify_object<AssignTo>::value == object_category::string_constructible),
+                           classify_object<AssignTo>::value == object_category::string_constructible
+#ifdef _WIN32
+                           || classify_object<AssignTo>::value == object_category::wstring_assignable ||
+                           classify_object<AssignTo>::value == object_category::wstring_constructible
+#endif  // _WIN32
+
+                           ),
                       detail::enabler> = detail::dummy>
 bool lexical_assign(const std::string &input, AssignTo &output) {
     return lexical_cast(input, output);
@@ -1115,7 +1187,12 @@ template <typename AssignTo,
           typename ConvertTo,
           enable_if_t<std::is_same<AssignTo, ConvertTo>::value && std::is_assignable<AssignTo &, AssignTo>::value &&
                           classify_object<AssignTo>::value != object_category::string_assignable &&
-                          classify_object<AssignTo>::value != object_category::string_constructible,
+                          classify_object<AssignTo>::value != object_category::string_constructible
+#ifdef _WIN32
+                          && classify_object<AssignTo>::value != object_category::wstring_assignable &&
+                          classify_object<AssignTo>::value != object_category::wstring_constructible
+#endif  // _WIN32
+                      ,
                       detail::enabler> = detail::dummy>
 bool lexical_assign(const std::string &input, AssignTo &output) {
     if(input.empty()) {
