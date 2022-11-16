@@ -27,6 +27,9 @@ namespace CLI {
 // [CLI11:argv_inl_hpp:verbatim]
 
 namespace detail {
+inline std::vector<const char *> result;
+inline std::vector<std::string> args_as_strings;
+inline std::vector<char> cmdline;
 
 /// Command-line arguments, as passed in to this executable, converted to utf-8 on Windows.
 CLI11_INLINE const std::vector<const char *> &args() {
@@ -34,8 +37,8 @@ CLI11_INLINE const std::vector<const char *> &args() {
     // variable initialization [stmt.dcl.3]
 
 #ifdef _WIN32
-    static const std::vector<const char *> result = [] {
-        static const std::vector<std::string> args_as_strings = [] {
+    result = [] {
+        args_as_strings = [] {
             // On Windows, take arguments from GetCommandLineW and convert them to utf-8.
             std::vector<std::string> result;
             int argc = 0;
@@ -69,8 +72,8 @@ CLI11_INLINE const std::vector<const char *> &args() {
     return result;
 
 #else
-    static const std::vector<const char *> result = [] {
-        static const std::vector<char> cmdline = [] {
+    result = [] {
+        cmdline = [] {
             // On posix, retrieve arguments from /proc/self/cmdline, separated by null terminators.
             std::vector<char> result;
 

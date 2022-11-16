@@ -179,6 +179,7 @@ endif()
 if(CLI11_BUILD_TESTS)
   include(CTest)
   add_subdirectory(tests)
+  add_subdirectory(benchmarks)
 endif()
 
 if(CLI11_BUILD_EXAMPLES)
