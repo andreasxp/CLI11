@@ -15,7 +15,9 @@ set(CLI11_headers
     ${CLI11_headerLoc}/Timer.hpp
     ${CLI11_headerLoc}/TypeTools.hpp
     ${CLI11_headerLoc}/Validators.hpp
-    ${CLI11_headerLoc}/Version.hpp)
+    ${CLI11_headerLoc}/Version.hpp
+    ${CLI11_headerLoc}/Encoding.hpp
+    ${CLI11_headerLoc}/Argv.hpp)
 
 set(CLI11_implLoc "${PROJECT_SOURCE_DIR}/include/CLI/impl")
 
@@ -26,7 +28,10 @@ set(CLI11_impl_headers
     ${CLI11_implLoc}/Option_inl.hpp
     ${CLI11_implLoc}/Split_inl.hpp
     ${CLI11_implLoc}/StringTools_inl.hpp
-    ${CLI11_implLoc}/Validators_inl.hpp)
+    ${CLI11_implLoc}/Validators_inl.hpp
+    ${CLI11_implLoc}/Encoding_inl.hpp
+    ${CLI11_implLoc}/Argv_inl.hpp
+    ${CLI11_implLoc}/SlimWindowsH.hpp)
 
 if(CLI11_PRECOMPILED)
   # Create static lib
