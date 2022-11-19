@@ -35,6 +35,9 @@ void parse_global(benchmark::State &state) {
     for(auto _ : state) {
         auto args = CLI::detail::args();
         app.parse(args.size(), args.data());
+        benchmark::DoNotOptimize(app);
+        benchmark::DoNotOptimize(args);
+        benchmark::ClobberMemory();
     }
 }
 
@@ -42,6 +45,7 @@ void get_global_args(benchmark::State &state) {
     // Perform setup here
     for(auto _ : state) {
         benchmark::DoNotOptimize(CLI::detail::args());
+        benchmark::ClobberMemory();
     }
 }
 
@@ -60,6 +64,11 @@ void simple_main(benchmark::State &state) {
         } catch(const CLI::ParseError &e) {
             app.exit(e);
         }
+
+        benchmark::DoNotOptimize(app);
+        benchmark::DoNotOptimize(option1);
+        benchmark::DoNotOptimize(option2);
+        benchmark::ClobberMemory();
     }
 }
 
