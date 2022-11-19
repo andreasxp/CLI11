@@ -494,7 +494,7 @@ CLI11_INLINE void App::parse(int argc, const wchar_t *const *argv) {
         args.emplace_back(narrow(argv[i]));
     parse(std::move(args));
 }
-#endif // _WIN32
+#endif  // _WIN32
 
 CLI11_INLINE void App::parse(std::string commandline, bool program_name_included) {
 
@@ -527,7 +527,7 @@ CLI11_INLINE void App::parse(std::string commandline, bool program_name_included
 CLI11_INLINE void App::parse(std::wstring commandline, bool program_name_included) {
     parse(narrow(commandline), program_name_included);
 }
-#endif // _WIN32
+#endif  // _WIN32
 
 CLI11_INLINE void App::parse(std::vector<std::string> &args) {
     // Clear if parsed
