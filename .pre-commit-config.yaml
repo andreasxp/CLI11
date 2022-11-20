@@ -17,7 +17,6 @@ repos:
       - id: check-symlinks
       - id: check-yaml
       - id: end-of-file-fixer
-        exclude: tests/data/parse_unicode.txt
       - id: mixed-line-ending
       - id: trailing-whitespace
 
